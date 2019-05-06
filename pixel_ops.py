@@ -2,14 +2,22 @@
 import PIL.Image
 #endregion
 
-# Globals for the color white
+#region ### Globals ###
+# The color white
 white = 255
 all_white = (255, 255, 255, 255)
 
+# Set the alpha
+alpha = 255
+#endregion
+
 
 class Pixel:
-    # Pixel ID, the relative location from the top left corner
-    id = []
+    # Pixel ID, in terms of top to bottom, right to left
+    global_id = None
+
+    # Pixel ID, specified as row, column pair
+    pix_id = []
 
     # The RGB values of the pixel
     red = 0
@@ -20,12 +28,14 @@ class Pixel:
     # Default it is set to false
     touched = False
 
-    def __init__(self, row_id, col_id, r_value, g_value, b_value):
-        self.id.append(row_id)
-        self.id.append(col_id)
+    def __init__(self, position, row_id, col_id, r_value, g_value, b_value):
+        self.global_id = position
+        self.pix_id.append(row_id)
+        self.pix_id.append(col_id)
         self.red = r_value
         self.green = g_value
         self.blue = b_value
+        self.all_colors = (self.red, self.green, self.blue, alpha)
 
 
 def get_orig_pixels(image):
@@ -46,7 +56,7 @@ def create_pixels(orig_pixels, width):
         row, column = find_row_and_col(i, width)
 
         # Create and add the Pixel
-        temp_pixel = Pixel(row, column, red_value, green_value, blue_value)
+        temp_pixel = Pixel(i, row, column, red_value, green_value, blue_value)
         new_pixels.append(temp_pixel)
 
     return new_pixels
@@ -64,3 +74,11 @@ def find_row_and_col(pixel_index, width):
     row, col = divmod(pixel_index, width)
 
     return row, col
+
+
+def get_pixel_by_row_col(row, col, width):
+    # Get the global id of the pixel from the row and column
+    if row == 0:
+        return col
+    else:
+        return ((row - 1) * width) + col

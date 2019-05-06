@@ -1,3 +1,6 @@
+# Code derived from BitClean, a C# program developed by Austin Herman
+# Github link: https://github.com/austeeen/bitclean
+
 #region ### Imports ###
 import PIL.Image
 import file_ops as f_ops
