@@ -19,6 +19,12 @@ class StoreMap:
     # Temporarily store a list of all pixels found per object
     found_pixels = []
 
+    # Temporarily store a list of all pixels connected to the root node pixel via other pixel nodes
+    storage_pixels = []
+
+    # Temporarily store a list of all adjacent pixels found per pixel
+    adj_pixels = []
+
     def __init__(self, pixels, img_w, img_h):
         self.pixel_list = pixels
         self.width = img_w
@@ -48,8 +54,14 @@ class StoreMap:
                     # Create a StoreObject and add the pixel as the root node
                     object_in_store = StoreObject(self.pixel_list[i].global_id)
 
-                    # Find and add all the connections of this object to this instance of StoreObject
-                    self.discover_connections(i, [])
+                    # Find the adjacent connections to the node pixel
+                    self.discover_connections(i)
+
+                    # Loop through all the pixels until the entire object is captured
+                    control = True
+
+                    while control:
+                        control = self.evaluate_connections()
 
                     for j in range(len(self.found_pixels)):
                         object_in_store.selection.insert_node(self.found_pixels[j])
@@ -62,14 +74,13 @@ class StoreMap:
 
         return store_objects
 
-    def discover_connections(self, index, pixels_2_check):
-        # Initialize a list to hold all the adjacent pixels
-        adj_pixels = []
-        adj_pixels.extend(pixels_2_check)
+    def discover_connections(self, index):
+        # Initialize a boolean to determine if any connections were discovered
+        discovered = False
 
-        # Find all the neighboring pixels to the originally found pixel and add them to the tree
+        # Find all the neighboring pixels to the originally found pixel
 
-        # Find any adjacent pixels that are non-white using this diagram
+        # Find any adjacent pixels that are non-white and not touched using this diagram
         # TL TM TR - Top Left, Top Middle, Top Right
         # CL XX CR - Center Left, XX is Current Pixel, Center Right
         # BL BM BR - Bottom Left, Bottom Middle, Bottom Right
@@ -78,56 +89,130 @@ class StoreMap:
         if index > self.width:
             #                       Row                            Column
             tm_pixel = [self.pixel_list[index].pix_row_id - 1, self.pixel_list[index].pix_col_id]
-            adj_pixels.append(tm_pixel)
+
+            # Find the absolute id, use this to check if the pixel has been touched already
+            abs_id = p_ops.get_pixel_by_row_col(tm_pixel[0], tm_pixel[1], self.width)
+
+            if not self.pixel_list[abs_id].touched:
+                self.pixel_list[abs_id].touched = True
+                self.adj_pixels.append(abs_id)
+                discovered = True
 
             if index % self.width != 0:
                 #                       Row                            Column
                 tl_pixel = [self.pixel_list[index].pix_row_id - 1, self.pixel_list[index].pix_col_id - 1]
-                adj_pixels.append(tl_pixel)
+
+                # Find the absolute id, use this to check if the pixel has been touched already
+                abs_id = p_ops.get_pixel_by_row_col(tl_pixel[0], tl_pixel[1], self.width)
+
+                if not self.pixel_list[abs_id].touched:
+                    self.pixel_list[abs_id].touched = True
+                    self.adj_pixels.append(abs_id)
+                    discovered = True
 
             if (index + 1) % self.width != 0:
                 #                       Row                            Column
                 tr_pixel = [self.pixel_list[index].pix_row_id - 1, self.pixel_list[index].pix_col_id + 1]
-                adj_pixels.append(tr_pixel)
+
+                # Find the absolute id, use this to check if the pixel has been touched already
+                abs_id = p_ops.get_pixel_by_row_col(tr_pixel[0], tr_pixel[1], self.width)
+
+                if not self.pixel_list[abs_id].touched:
+                    self.pixel_list[abs_id].touched = True
+                    self.adj_pixels.append(abs_id)
+                    discovered = True
 
         # Only check the left and right pixels if they exist (checks the edge of the image)
         if index % self.width != 0:
             #                       Row                            Column
             cl_pixel = [self.pixel_list[index].pix_row_id, self.pixel_list[index].pix_col_id - 1]
-            adj_pixels.append(cl_pixel)
+
+            # Find the absolute id, use this to check if the pixel has been touched already
+            abs_id = p_ops.get_pixel_by_row_col(cl_pixel[0], cl_pixel[1], self.width)
+
+            if not self.pixel_list[abs_id].touched:
+                self.pixel_list[abs_id].touched = True
+                self.adj_pixels.append(abs_id)
+                discovered = True
 
         if (index + 1) % self.width != 0:
             #                       Row                            Column
             cr_pixel = [self.pixel_list[index].pix_row_id, self.pixel_list[index].pix_col_id + 1]
-            adj_pixels.append(cr_pixel)
+
+            # Find the absolute id, use this to check if the pixel has been touched already
+            abs_id = p_ops.get_pixel_by_row_col(cr_pixel[0], cr_pixel[1], self.width)
+
+            if not self.pixel_list[abs_id].touched:
+                self.pixel_list[abs_id].touched = True
+                self.adj_pixels.append(abs_id)
+                discovered = True
 
         # Only check the bottom pixels if a row below the current one exists
         if index < (self.width * self.height):
             #                       Row                            Column
             bm_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id]
-            adj_pixels.append(bm_pixel)
+
+            # Find the absolute id, use this to check if the pixel has been touched already
+            abs_id = p_ops.get_pixel_by_row_col(bm_pixel[0], bm_pixel[1], self.width)
+
+            if not self.pixel_list[abs_id].touched:
+                self.pixel_list[abs_id].touched = True
+                self.adj_pixels.append(abs_id)
+                discovered = True
 
             if index % self.width != 0:
                 #                   Row                            Column
                 bl_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id - 1]
-                adj_pixels.append(bl_pixel)
+
+                # Find the absolute id, use this to check if the pixel has been touched already
+                abs_id = p_ops.get_pixel_by_row_col(bl_pixel[0], bl_pixel[1], self.width)
+
+                if not self.pixel_list[abs_id].touched:
+                    self.pixel_list[abs_id].touched = True
+                    self.adj_pixels.append(abs_id)
+                    discovered = True
 
             if index != self.width * self.height:
                 #                   Row                            Column
                 br_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id + 1]
-                adj_pixels.append(br_pixel)
 
-        for i in range(len(adj_pixels)):
-            # Get the global id of the pixel
-            absolute_id = p_ops.get_pixel_by_row_col(adj_pixels[i][0], adj_pixels[i][1], self.width)
+                # Find the absolute id, use this to check if the pixel has been touched already
+                abs_id = p_ops.get_pixel_by_row_col(br_pixel[0], br_pixel[1], self.width)
 
-            # Check if this pixel has not been touched
-            if not self.pixel_list[absolute_id].touched:
-                # Check to see if this pixel is non-white
-                if self.pixel_list[absolute_id].all_colors != p_ops.all_white:
-                    # Add this pixel to the StoreObject tree and call this function on that pixel, this should
-                    # find all the connections for this object, save all the pixel values, and set the touched value to
-                    # true
-                    self.found_pixels.append(absolute_id)
-                    self.pixel_list[absolute_id].touched = True
-                    self.discover_connections(absolute_id, adj_pixels[i+1:])
+                if not self.pixel_list[abs_id].touched:
+                    self.pixel_list[abs_id].touched = True
+                    self.adj_pixels.append(abs_id)
+                    discovered = True
+
+        return discovered
+
+    def evaluate_connections(self):
+        # Iterate through the found adjacent pixels and add them to storage to be processed
+        for i in range(len(self.adj_pixels)):
+            if self.pixel_list[self.adj_pixels[i]] == p_ops.all_white:
+                self.pixel_list[self.adj_pixels[i]].touched = True
+
+            elif not self.pixel_list[self.adj_pixels[i]].touched:
+                self.pixel_list[self.adj_pixels[i]].touched = True
+                self.storage_pixels.append(self.pixel_list[self.adj_pixels[i]])
+
+        # Clean out the adjacent pixel list
+        self.adj_pixels.clear()
+
+        # Work on the first pixel in storage - pixels in storage have been touched and are used to continue searching
+        # for additional neighboring pixels
+        first_storage_pixel_abs_value = None
+
+        if len(self.storage_pixels) != 0:
+            self.found_pixels.append(self.storage_pixels[0])
+            first_storage_pixel_abs_value = self.storage_pixels[0].global_id
+
+        # Remove the pixel from storage
+        self.storage_pixels = self.storage_pixels[1:]
+
+        # Discover any connections to this pixel, if they are valid, add them to the storage list
+        if first_storage_pixel_abs_value is not None:
+            self.discover_connections(first_storage_pixel_abs_value)
+            return True
+        else:
+            return False
