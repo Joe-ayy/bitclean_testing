@@ -17,7 +17,8 @@ class Pixel:
     global_id = None
 
     # Pixel ID, specified as row, column pair
-    pix_id = []
+    pix_row_id = None
+    pix_col_id = None
 
     # The RGB values of the pixel
     red = 0
@@ -30,8 +31,8 @@ class Pixel:
 
     def __init__(self, position, row_id, col_id, r_value, g_value, b_value):
         self.global_id = position
-        self.pix_id.append(row_id)
-        self.pix_id.append(col_id)
+        self.pix_row_id = row_id
+        self.pix_col_id = col_id
         self.red = r_value
         self.green = g_value
         self.blue = b_value
@@ -56,8 +57,7 @@ def create_pixels(orig_pixels, width):
         row, column = find_row_and_col(i, width)
 
         # Create and add the Pixel
-        temp_pixel = Pixel(i, row, column, red_value, green_value, blue_value)
-        new_pixels.append(temp_pixel)
+        new_pixels.append(Pixel(i, row, column, red_value, green_value, blue_value))
 
     return new_pixels
 
@@ -78,7 +78,4 @@ def find_row_and_col(pixel_index, width):
 
 def get_pixel_by_row_col(row, col, width):
     # Get the global id of the pixel from the row and column
-    if row == 0:
-        return col
-    else:
-        return ((row - 1) * width) + col
+    return (row * width) + col
