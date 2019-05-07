@@ -140,14 +140,14 @@ class StoreMap:
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
-        # Only check the bottom pixels if a row below the current one exists
-        if index < ((self.width - 1) * (self.height - 1)):
-            #                       Row                            Column
-            bm_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id]
+        # Check the bottom pixels
+        #                       Row                            Column
+        bm_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id]
 
-            # Find the absolute id, use this to check if the pixel has been touched already
-            abs_id = p_ops.get_pixel_by_row_col(bm_pixel[0], bm_pixel[1], self.width)
+        # Find the absolute id, use this to check if the pixel has been touched already
+        abs_id = p_ops.get_pixel_by_row_col(bm_pixel[0], bm_pixel[1], self.width)
 
+        if abs_id < (self.width * self.height):
             if not self.pixel_list[abs_id].touched:
                 self.adj_pixels.append(abs_id)
                 discovered = True
@@ -163,7 +163,7 @@ class StoreMap:
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
-            if index != (self.width - 1) * (self.height - 1):
+            if index != (self.width * self.height - 1):
                 #                   Row                            Column
                 br_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id + 1]
 
