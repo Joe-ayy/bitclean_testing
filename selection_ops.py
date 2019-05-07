@@ -55,16 +55,14 @@ class StoreMap:
                     object_in_store = StoreObject(self.pixel_list[i].global_id)
 
                     # Find the adjacent connections to the node pixel
-                    self.discover_connections(i)
+                    control = self.discover_connections(i)
 
                     # Loop through all the pixels until the entire object is captured
-                    control = True
-
                     while control:
                         control = self.evaluate_connections()
 
                     for j in range(len(self.found_pixels)):
-                        object_in_store.selection.insert_node(self.found_pixels[j])
+                        object_in_store.selection.insert_node(self.found_pixels[j].global_id)
 
                     # Empty the temporary found_pixels list
                     self.found_pixels.clear()
@@ -94,7 +92,6 @@ class StoreMap:
             abs_id = p_ops.get_pixel_by_row_col(tm_pixel[0], tm_pixel[1], self.width)
 
             if not self.pixel_list[abs_id].touched:
-                self.pixel_list[abs_id].touched = True
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
@@ -106,7 +103,6 @@ class StoreMap:
                 abs_id = p_ops.get_pixel_by_row_col(tl_pixel[0], tl_pixel[1], self.width)
 
                 if not self.pixel_list[abs_id].touched:
-                    self.pixel_list[abs_id].touched = True
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
@@ -118,7 +114,6 @@ class StoreMap:
                 abs_id = p_ops.get_pixel_by_row_col(tr_pixel[0], tr_pixel[1], self.width)
 
                 if not self.pixel_list[abs_id].touched:
-                    self.pixel_list[abs_id].touched = True
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
@@ -131,7 +126,6 @@ class StoreMap:
             abs_id = p_ops.get_pixel_by_row_col(cl_pixel[0], cl_pixel[1], self.width)
 
             if not self.pixel_list[abs_id].touched:
-                self.pixel_list[abs_id].touched = True
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
@@ -143,12 +137,11 @@ class StoreMap:
             abs_id = p_ops.get_pixel_by_row_col(cr_pixel[0], cr_pixel[1], self.width)
 
             if not self.pixel_list[abs_id].touched:
-                self.pixel_list[abs_id].touched = True
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
         # Only check the bottom pixels if a row below the current one exists
-        if index < (self.width * self.height):
+        if index < ((self.width - 1) * (self.height - 1)):
             #                       Row                            Column
             bm_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id]
 
@@ -156,7 +149,6 @@ class StoreMap:
             abs_id = p_ops.get_pixel_by_row_col(bm_pixel[0], bm_pixel[1], self.width)
 
             if not self.pixel_list[abs_id].touched:
-                self.pixel_list[abs_id].touched = True
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
@@ -168,11 +160,10 @@ class StoreMap:
                 abs_id = p_ops.get_pixel_by_row_col(bl_pixel[0], bl_pixel[1], self.width)
 
                 if not self.pixel_list[abs_id].touched:
-                    self.pixel_list[abs_id].touched = True
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
-            if index != self.width * self.height:
+            if index != (self.width - 1) * (self.height - 1):
                 #                   Row                            Column
                 br_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id + 1]
 
@@ -180,7 +171,6 @@ class StoreMap:
                 abs_id = p_ops.get_pixel_by_row_col(br_pixel[0], br_pixel[1], self.width)
 
                 if not self.pixel_list[abs_id].touched:
-                    self.pixel_list[abs_id].touched = True
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
@@ -189,7 +179,7 @@ class StoreMap:
     def evaluate_connections(self):
         # Iterate through the found adjacent pixels and add them to storage to be processed
         for i in range(len(self.adj_pixels)):
-            if self.pixel_list[self.adj_pixels[i]] == p_ops.all_white:
+            if self.pixel_list[self.adj_pixels[i]].all_colors == p_ops.all_white:
                 self.pixel_list[self.adj_pixels[i]].touched = True
 
             elif not self.pixel_list[self.adj_pixels[i]].touched:
