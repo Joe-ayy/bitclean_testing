@@ -37,6 +37,10 @@ class Pixel:
         self.green = g_value
         self.blue = b_value
         self.all_colors = (self.red, self.green, self.blue, alpha)
+        self.hue = None
+
+    def update_hue(self, hue):
+        self.hue = hue
 
 
 def get_orig_pixels(image):

@@ -9,12 +9,10 @@ class StoreObject:
     # The objects in this class are objects found in a store map, they will either be determined to be a structure or
     # dust (something not actually present in the store)
 
-    object_type = None  # This will either be set to "structure" or "dust"
-    selection = []      # Sorted list, by absolute id, that will hold all the pixels of the object
-
-    def __init__(self, data):
-        # Create a binary tree to hold all the pixels that belong to this StoreObject
-        self.selection.append(data)
+    def __init__(self, data, object_type=None):
+        # Create a list to hold all the pixels that belong to this StoreObject
+        self.selection = data
+        self.object_t = object_type
 
 
 class StoreMap:
@@ -53,8 +51,8 @@ class StoreMap:
                     # Set the pixel to be touched
                     self.pixel_list[i].touched = True
 
-                    # Create a StoreObject and add the pixel as the root node
-                    object_in_store = StoreObject(self.pixel_list[i].global_id)
+                    # Create a list for a StoreObject and add the pixel as the first entry
+                    object_in_store = [self.pixel_list[i]]
 
                     # Find the adjacent connections to the node pixel
                     control = self.discover_connections(i)
@@ -64,13 +62,13 @@ class StoreMap:
                         control = self.evaluate_connections()
 
                     for j in range(len(self.found_pixels)):
-                        l_ops.insort_pixels(object_in_store.selection, self.found_pixels[j])
+                        l_ops.insort_pixels(object_in_store, self.found_pixels[j])
 
                     # Empty the temporary found_pixels list
                     self.found_pixels.clear()
 
                     # Add this object to the store_objects list
-                    store_objects.append(object_in_store)
+                    store_objects.append(StoreObject(object_in_store))
 
         return store_objects
 
@@ -172,9 +170,10 @@ class StoreMap:
                 # Find the absolute id, use this to check if the pixel has been touched already
                 abs_id = p_ops.get_pixel_by_row_col(br_pixel[0], br_pixel[1], self.width)
 
-                if not self.pixel_list[abs_id].touched:
-                    self.adj_pixels.append(abs_id)
-                    discovered = True
+                if abs_id != self.width * self.height:
+                    if not self.pixel_list[abs_id].touched:
+                        self.adj_pixels.append(abs_id)
+                        discovered = True
 
         return discovered
 
@@ -208,3 +207,7 @@ class StoreMap:
             return True
         else:
             return False
+
+
+def fill_object(store_object):
+    pass

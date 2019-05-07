@@ -1,3 +1,7 @@
+# region ### Imports
+#endregion
+
+
 # Mimic the insort function found from bisect module
 # Referenced code:
 # https://stackoverflow.com/questions/41902958/insert-item-into-case-insensitive-sorted-list-in-python/41903429#41903429
