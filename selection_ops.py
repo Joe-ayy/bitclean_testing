@@ -1,5 +1,6 @@
 #region ### Imports ###
 import tree_ops as t_ops
+import list_ops as l_ops
 import pixel_ops as p_ops
 #endregion
 
@@ -9,10 +10,11 @@ class StoreObject:
     # dust (something not actually present in the store)
 
     object_type = None  # This will either be set to "structure" or "dust"
+    selection = []      # Sorted list, by absolute id, that will hold all the pixels of the object
 
     def __init__(self, data):
         # Create a binary tree to hold all the pixels that belong to this StoreObject
-        self.selection = t_ops.BinaryTreeNode(data)
+        self.selection.append(data)
 
 
 class StoreMap:
@@ -62,7 +64,7 @@ class StoreMap:
                         control = self.evaluate_connections()
 
                     for j in range(len(self.found_pixels)):
-                        object_in_store.selection.insert_node(self.found_pixels[j].global_id)
+                        l_ops.insort_pixels(object_in_store.selection, self.found_pixels[j])
 
                     # Empty the temporary found_pixels list
                     self.found_pixels.clear()

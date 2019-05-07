@@ -1,6 +1,8 @@
 # Code inspired by this website:
 # https://www.tutorialspoint.com/python/python_binary_tree.htm
 
+# Can't use, exceeds Python's maximum recursion depth
+
 
 class BinaryTreeNode:
     # Allows for a root node to be added to the tree, not required
