@@ -13,25 +13,17 @@ import datetime
 
 
 def main():
+    # Start timer
     start = time.time()
 
     # Get an image object from a file
     img = f_ops.load_and_create_image()
 
-    # Printing
-    print("Image loaded")
-
     # Get the width and height of the image
     img_width, img_height = p_ops.get_image_width_height(img)
 
-    # Printing
-    print("Image width and height received")
-
     # Get all the pixel values of the image
     orig_pixels = p_ops.get_orig_pixels(img)
-
-    # Printing
-    print("Original pixel values received")
 
     # Create a list of pixels defined by the Pixel Class
     pixels = p_ops.create_pixels(orig_pixels, img_width)
@@ -54,18 +46,6 @@ def main():
     data_processing_elapsed_time = data_processing_stop - start
 
     print("Elapsed time for data processing: ", datetime.timedelta(seconds=data_processing_elapsed_time))
-
-    # Testing, save the image
-    f_ops.create_and_save_bw_image(pixels, img_width, img_height)
-
-    # Printing
-    print("Store map created in black and white")
-
-    # Testing, save the image
-    f_ops.create_and_save_avg_hue_image(pixels, img_width, img_height)
-
-    # Printing
-    print("Store map created with average hue per object")
 
     # Create bounding boxes and save to image
     store_map.transform_bbox_pixels()

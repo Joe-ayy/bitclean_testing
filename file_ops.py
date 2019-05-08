@@ -62,6 +62,6 @@ def create_and_save_bbox_image(store):
 
         file_pixels.append((red, green, blue))
 
-    save_img = PIL.Image.new("RGB", (store.width, store.height))
+    save_img = PIL.Image.new("RGB", (store.img_width, store.img_height))
     save_img.putdata(file_pixels)
     save_img.save("bounding_box_output.bmp")

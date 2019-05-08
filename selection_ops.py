@@ -28,22 +28,20 @@ class StoreObject:
     def update_object_type(self, object_type):
         self.obj_type = object_type
 
-    def set_bounding_box_dimensions(self, width):
+    def set_bbox_and_abs_width_height(self, width):
         # Get the top most, bottom most, left most, and right most pixels of the object and return the appropriate
         # row and column values to determine the bounding box for the object
 
         # region ### Get the top most pixel ###
         # Since the lists are order by absolute id, the first pixel in the list will be either the top most pixel or one
         # of the top most pixels
-        self.top_pixel_loc = self.pixels_in_obj[0].pix_row_id
-        self.top_pixel_global_id = self.pixels_in_obj[0].global_id
+        self.top_pixel = self.pixels_in_obj[0]
         #endregion
 
         # region ### Get the bottom most pixel ###
         # Since the lists are order by absolute id, the last pixel in the list will be either the bottom most pixel or
         # one of the bottom most pixels
-        self.bottom_pixel_loc = self.pixels_in_obj[-1].pix_row_id
-        self.bottom_pixel_global_id = self.pixels_in_obj[-1].global_id
+        self.bot_pixel = self.pixels_in_obj[-1]
         #endregion
 
         # region ### Get the left most pixel ###
@@ -51,19 +49,15 @@ class StoreObject:
         # absolute id mod the width of the image
 
         # Initialize a value to hold the reference to the index of the pixel that is left most
-        left_most_pixel = self.pixels_in_obj[0]
+        self.left_pixel = self.pixels_in_obj[0]
 
         # Iterate through the entire object, updating the index as the left most pixel is found
         for i in range(len(self.pixels_in_obj) - 1):
             # Check the distance from the left
             next_pixel = self.pixels_in_obj[i + 1]
 
-            if (next_pixel.global_id % width) < (left_most_pixel.global_id % width):
-                left_most_pixel = next_pixel
-
-        # The index of the left most pixel has been found, now set the left most pixel location
-        self.left_pixel_loc = left_most_pixel.pix_col_id
-        self.left_pixel_global_id = left_most_pixel.global_id
+            if (next_pixel.gid % width) < (self.left_pixel.gid % width):
+                self.left_pixel = next_pixel
         #endregion
 
         # region ### Get the right most pixel ###
@@ -71,19 +65,15 @@ class StoreObject:
         # absolute id mod the width of the image
 
         # Initialize a value to hold the reference to the index of the pixel that is the right most
-        right_most_pixel = self.pixels_in_obj[0]
+        self.right_pixel = self.pixels_in_obj[0]
 
         # Iterate through the entire object, updating the index as the right most pixel is found
         for j in range(len(self.pixels_in_obj) - 1):
             # Check the distance from the right
             next_pixel = self.pixels_in_obj[j + 1]
 
-            if (next_pixel.global_id % width) > (right_most_pixel.global_id % width):
-                right_most_pixel = next_pixel
-
-        # The index of the right most pixel has been found, now set the right most pixel location
-        self.right_pixel_loc = right_most_pixel.pix_col_id + 1
-        self.right_pixel_global_id = right_most_pixel.global_id
+            if (next_pixel.gid % width) > (self.right_pixel.gid % width):
+                self.right_pixel = next_pixel
         #endregion
 
         # Also set the width and height
@@ -91,10 +81,10 @@ class StoreObject:
 
     def set_width_and_height(self):
         # Width
-        self.abs_width = self.right_pixel.pix_col_id - self.left_pixel_loc
+        self.abs_width = self.right_pixel.pixel_col_id - self.left_pixel.pixel_col_id + 1
 
         # Height
-        self.abs_height = self.bottom_pixel_loc - self.top_pixel_loc + 1
+        self.abs_height = self.bot_pixel.pixel_row_id - self.top_pixel.pixel_row_id + 1
 
     def print_width_and_height_to_console(self):
         print("Absolute object width:", self.abs_width, "Absolute object height:", self.abs_height)
@@ -103,10 +93,10 @@ class StoreObject:
 class StoreMap:
     def __init__(self, pixels, img_w, img_h):
         # Initialize values
-        self.pixel_list = pixels
+        self.all_pixels = pixels
         self.bbox_mask = pixels.copy()
-        self.width = img_w
-        self.height = img_h
+        self.img_width = img_w
+        self.img_height = img_h
         self.objects_in_store = None
 
         # Temporarily store a list of all pixels found per object
@@ -131,22 +121,22 @@ class StoreMap:
         # Iterate through the list of pixels to find objects in the store
         # These objects will be the non-white pixels connected to 0 or more non-white pixels and are to be determined
         # in the future to be either a structure present in the store or dust
-        for i in range(len(self.pixel_list)):
+        for i in range(len(self.all_pixels)):
             # First, check if the pixel being accessed is white
-            if self.pixel_list[i].all_colors == p_ops.all_white:
+            if self.all_pixels[i].all_colors == p_ops.all_white:
                 # Set the pixel to being touched
-                self.pixel_list[i].touched = True
+                self.all_pixels[i].touched = True
                 continue
             else:  # This is if the pixel is non-white
                 # Next, check if the pixel is touched
-                if self.pixel_list[i].touched:
+                if self.all_pixels[i].touched:
                     continue
                 else:  # This is if the pixel has not been touched
                     # Set the pixel to be touched
-                    self.pixel_list[i].touched = True
+                    self.all_pixels[i].touched = True
 
                     # Create a list for a StoreObject and add the pixel as the first entry
-                    object_in_store = [self.pixel_list[i]]
+                    object_in_store = [self.all_pixels[i]]
 
                     # Find the adjacent connections to the node pixel
                     control = self.discover_connections(i)
@@ -171,115 +161,109 @@ class StoreMap:
         discovered = False
 
         # Find all the neighboring pixels to the originally found pixel
-
         # Find any adjacent pixels that are non-white and not touched using this diagram
         # TL TM TR - Top Left, Top Middle, Top Right
         # CL XX CR - Center Left, XX is Current Pixel, Center Right
         # BL BM BR - Bottom Left, Bottom Middle, Bottom Right
 
-        # Only check the top pixels if a row above the current one exists
-        if index > self.width:
-            #                       Row                            Column
-            tm_pixel = [self.pixel_list[index].pix_row_id - 1, self.pixel_list[index].pix_col_id]
+        #region ### TOP PIXELS: Only check the top pixels if a row above the current one exists ###
+        if index > self.img_width:
+            tm_pixel = [self.all_pixels[index].pixel_row_id - 1, self.all_pixels[index].pixel_col_id]
 
             # Find the absolute id, use this to check if the pixel has been touched already
-            abs_id = p_ops.get_pixel_by_row_col(tm_pixel[0], tm_pixel[1], self.width)
+            abs_id = p_ops.get_pixel_gid_by_row_col(tm_pixel[0], tm_pixel[1], self.img_width)
 
-            if not self.pixel_list[abs_id].touched:
+            if not self.all_pixels[abs_id].touched:
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
-            if index % self.width != 0:
-                #                       Row                            Column
-                tl_pixel = [self.pixel_list[index].pix_row_id - 1, self.pixel_list[index].pix_col_id - 1]
+            if index % self.img_width != 0:
+                tl_pixel = [self.all_pixels[index].pixel_row_id - 1, self.all_pixels[index].pixel_col_id - 1]
 
                 # Find the absolute id, use this to check if the pixel has been touched already
-                abs_id = p_ops.get_pixel_by_row_col(tl_pixel[0], tl_pixel[1], self.width)
+                abs_id = p_ops.get_pixel_gid_by_row_col(tl_pixel[0], tl_pixel[1], self.img_width)
 
-                if not self.pixel_list[abs_id].touched:
+                if not self.all_pixels[abs_id].touched:
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
-            if (index + 1) % self.width != 0:
-                #                       Row                            Column
-                tr_pixel = [self.pixel_list[index].pix_row_id - 1, self.pixel_list[index].pix_col_id + 1]
+            if (index + 1) % self.img_width != 0:
+                tr_pixel = [self.all_pixels[index].pixel_row_id - 1, self.all_pixels[index].pixel_col_id + 1]
 
                 # Find the absolute id, use this to check if the pixel has been touched already
-                abs_id = p_ops.get_pixel_by_row_col(tr_pixel[0], tr_pixel[1], self.width)
+                abs_id = p_ops.get_pixel_gid_by_row_col(tr_pixel[0], tr_pixel[1], self.img_width)
 
-                if not self.pixel_list[abs_id].touched:
+                if not self.all_pixels[abs_id].touched:
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
-        # Only check the left and right pixels if they exist (checks the edge of the image)
-        if index % self.width != 0:
-            #                       Row                            Column
-            cl_pixel = [self.pixel_list[index].pix_row_id, self.pixel_list[index].pix_col_id - 1]
+        #endregion
+
+        # region ### LEFT/RIGHT PIXELS: Only check the left and right pixels if they exist ###
+        if index % self.img_width != 0:
+            cl_pixel = [self.all_pixels[index].pixel_row_id, self.all_pixels[index].pixel_col_id - 1]
 
             # Find the absolute id, use this to check if the pixel has been touched already
-            abs_id = p_ops.get_pixel_by_row_col(cl_pixel[0], cl_pixel[1], self.width)
+            abs_id = p_ops.get_pixel_gid_by_row_col(cl_pixel[0], cl_pixel[1], self.img_width)
 
-            if not self.pixel_list[abs_id].touched:
+            if not self.all_pixels[abs_id].touched:
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
-        if (index + 1) % self.width != 0:
-            #                       Row                            Column
-            cr_pixel = [self.pixel_list[index].pix_row_id, self.pixel_list[index].pix_col_id + 1]
+        if (index + 1) % self.img_width != 0:
+            cr_pixel = [self.all_pixels[index].pixel_row_id, self.all_pixels[index].pixel_col_id + 1]
 
             # Find the absolute id, use this to check if the pixel has been touched already
-            abs_id = p_ops.get_pixel_by_row_col(cr_pixel[0], cr_pixel[1], self.width)
+            abs_id = p_ops.get_pixel_gid_by_row_col(cr_pixel[0], cr_pixel[1], self.img_width)
 
-            if not self.pixel_list[abs_id].touched:
+            if not self.all_pixels[abs_id].touched:
                 self.adj_pixels.append(abs_id)
                 discovered = True
+        #endregion
 
-        # Check the bottom pixels
-        #                       Row                            Column
-        bm_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id]
+        # region ### BOTTOM PIXELS: Check the bottom pixels if a row below them exists ###
+        bm_pixel = [self.all_pixels[index].pixel_row_id + 1, self.all_pixels[index].pixel_col_id]
 
         # Find the absolute id, use this to check if the pixel has been touched already
-        abs_id = p_ops.get_pixel_by_row_col(bm_pixel[0], bm_pixel[1], self.width)
+        abs_id = p_ops.get_pixel_gid_by_row_col(bm_pixel[0], bm_pixel[1], self.img_width)
 
-        if abs_id < (self.width * self.height):
-            if not self.pixel_list[abs_id].touched:
+        if abs_id < (self.img_width * self.img_height):
+            if not self.all_pixels[abs_id].touched:
                 self.adj_pixels.append(abs_id)
                 discovered = True
 
-            if index % self.width != 0:
-                #                   Row                            Column
-                bl_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id - 1]
+            if index % self.img_width != 0:
+                bl_pixel = [self.all_pixels[index].pixel_row_id + 1, self.all_pixels[index].pixel_col_id - 1]
 
                 # Find the absolute id, use this to check if the pixel has been touched already
-                abs_id = p_ops.get_pixel_by_row_col(bl_pixel[0], bl_pixel[1], self.width)
+                abs_id = p_ops.get_pixel_gid_by_row_col(bl_pixel[0], bl_pixel[1], self.img_width)
 
-                if not self.pixel_list[abs_id].touched:
+                if not self.all_pixels[abs_id].touched:
                     self.adj_pixels.append(abs_id)
                     discovered = True
 
-            if index != (self.width * self.height - 1):
-                #                   Row                            Column
-                br_pixel = [self.pixel_list[index].pix_row_id + 1, self.pixel_list[index].pix_col_id + 1]
+            if index != (self.img_width * self.img_height - 1):
+                br_pixel = [self.all_pixels[index].pixel_row_id + 1, self.all_pixels[index].pixel_col_id + 1]
 
                 # Find the absolute id, use this to check if the pixel has been touched already
-                abs_id = p_ops.get_pixel_by_row_col(br_pixel[0], br_pixel[1], self.width)
+                abs_id = p_ops.get_pixel_gid_by_row_col(br_pixel[0], br_pixel[1], self.img_width)
 
-                if abs_id != self.width * self.height:
-                    if not self.pixel_list[abs_id].touched:
+                if abs_id != self.img_width * self.img_height:
+                    if not self.all_pixels[abs_id].touched:
                         self.adj_pixels.append(abs_id)
                         discovered = True
+        #endregion
 
         return discovered
 
     def evaluate_connections(self):
         # Iterate through the found adjacent pixels and add them to storage to be processed
         for i in range(len(self.adj_pixels)):
-            if self.pixel_list[self.adj_pixels[i]].all_colors == p_ops.all_white:
-                self.pixel_list[self.adj_pixels[i]].touched = True
-
-            elif not self.pixel_list[self.adj_pixels[i]].touched:
-                self.pixel_list[self.adj_pixels[i]].touched = True
-                self.storage_pixels.append(self.pixel_list[self.adj_pixels[i]])
+            if self.all_pixels[self.adj_pixels[i]].all_colors == p_ops.all_white:
+                self.all_pixels[self.adj_pixels[i]].touched = True
+            elif not self.all_pixels[self.adj_pixels[i]].touched:
+                self.all_pixels[self.adj_pixels[i]].touched = True
+                self.storage_pixels.append(self.all_pixels[self.adj_pixels[i]])
 
         # Clean out the adjacent pixel list
         self.adj_pixels.clear()
@@ -290,7 +274,7 @@ class StoreMap:
 
         if len(self.storage_pixels) != 0:
             self.found_pixels.append(self.storage_pixels[0])
-            first_storage_pixel_abs_value = self.storage_pixels[0].global_id
+            first_storage_pixel_abs_value = self.storage_pixels[0].gid
 
         # Remove the pixel from storage
         self.storage_pixels = self.storage_pixels[1:]
@@ -304,7 +288,7 @@ class StoreMap:
 
     def set_bounding_boxes(self):
         for i in range(len(self.objects_in_store)):
-            self.objects_in_store[i].set_bounding_box_dimensions(self.width)
+            self.objects_in_store[i].set_bbox_and_abs_width_height(self.img_width)
 
     def print_all_objects_width_and_height_to_console(self):
         for i in range(len(self.objects_in_store)):
@@ -315,41 +299,4 @@ class StoreMap:
         # The constraints for the bounding boxes are the rows and columns of the top most, bottom most, left most, and
         # right most pixels
 
-        # First check each row for the top and bottom of objects
-        for i in range(self.height):
-            for j in range(len(self.objects_in_store)):
-                if (self.objects_in_store[j].top_pixel_loc == i) or (self.objects_in_store[j].bottom_pixel_loc == i):
-                    # For sake of ease
-                    left_pix_lid = p_ops.get_local_index_by_global_id(self.objects_in_store[j].pixel_selection,
-                                   self.objects_in_store[j].left_pixel_global_id)
-                    right_pix_lid = p_ops.get_local_index_by_global_id(self.objects_in_store[j].pixel_selection,
-                                    self.objects_in_store[j].right_pixel_global_id)
-
-                    # Get the columns corresponding to the top bounding line
-                    left_col = self.objects_in_store[j].pixel_selection[left_pix_lid].pix_col_id
-                    right_col = self.objects_in_store[j].pixel_selection[right_pix_lid].pix_col_id
-
-                    for k in range(left_col, right_col + 1):
-                        # Determine the location
-                        location = left_col + k
-
-                        # Set the value at that location
-                        self.bbox_mask[location].red = 0
-                        self.bbox_mask[location].green = 0
-                        self.bbox_mask[location].blue = 0
-
-        # Next check each column for the left and right of objects
-        #for a in range(self.width):
-        #    for b in range(len(self.objects_in_store)):
-        #        if (self.objects_in_store[b].left_pixel_loc == a) or (self.objects_in_store[b].right_pixel_loc == a):
-        #            # For sake of ease
-        #            top_pix_gid = self.objects_in_store[b].top_pixel_global_id
-        #            bot_pix_gid = self.objects_in_store[b].bottom_pixel_global_id
-        #            for c in range(top_pix_gid, bot_pix_gid + self.width, self.width):
-        #                # Determine the location
-        #               location = i * self.width + left_col
-
-        #                self.bbox_mask[c].red = 0
-        #                self.bbox_mask[c].green = 0
-        #                self.bbox_mask[c].blue = 0
-
+        return
