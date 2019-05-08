@@ -22,7 +22,7 @@ def main():
     print("Image loaded")
 
     # Get the width and height of the image
-    img_width, img_height = p_ops.get_width_height(img)
+    img_width, img_height = p_ops.get_image_width_height(img)
 
     # Printing
     print("Image width and height received")
@@ -44,15 +44,16 @@ def main():
 
     # Printing
     print("Store map created")
-
-    list_of_store_objects = store_map.find_objects_in_store()
+    print("Store objects found")
 
     # Set the average hue of pixels in store objects
-    for i in range(len(list_of_store_objects)):
-        o_stats.get_avg_hue(list_of_store_objects[i], "toss")
+    for i in range(len(store_map.objects_in_store)):
+        o_stats.get_avg_hue(store_map.objects_in_store[i], "toss")  # Toss input doesn't matter
 
-    # Printing
-    print("Store objects found")
+    data_processing_stop = time.time()
+    data_processing_elapsed_time = data_processing_stop - start
+
+    print("Elapsed time for data processing: ", datetime.timedelta(seconds=data_processing_elapsed_time))
 
     # Testing, save the image
     f_ops.create_and_save_bw_image(pixels, img_width, img_height)
@@ -66,11 +67,20 @@ def main():
     # Printing
     print("Store map created with average hue per object")
 
-    stop = time.time()
+    # Create bounding boxes and save to image
+    store_map.transform_bbox_pixels()
+    f_ops.create_and_save_bbox_image(store_map)
 
+    # Printing
+    print("Store map created with bounding boxes")
+
+    # Printing
+    store_map.print_all_objects_width_and_height_to_console()
+
+    stop = time.time()
     elapsed_time = stop - start
 
-    print("Elapsed time: ", datetime.timedelta(seconds=elapsed_time))
+    print("Total elapsed time: ", datetime.timedelta(seconds=elapsed_time))
 
 
 main()

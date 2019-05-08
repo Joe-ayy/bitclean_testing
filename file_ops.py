@@ -48,3 +48,20 @@ def create_and_save_avg_hue_image(list_of_pixels, w, h):
     save_img = PIL.Image.new("RGB", (w, h))
     save_img.putdata(file_pixels)
     save_img.save("avg_hue_output.bmp")
+
+
+def create_and_save_bbox_image(store):
+    # Initialize a list of pixels to send to a file
+    file_pixels = []
+
+    for i in range(len(store.bbox_mask)):
+        # Set the colors
+        red = store.bbox_mask[i].red
+        green = store.bbox_mask[i].green
+        blue = store.bbox_mask[i].blue
+
+        file_pixels.append((red, green, blue))
+
+    save_img = PIL.Image.new("RGB", (store.width, store.height))
+    save_img.putdata(file_pixels)
+    save_img.save("bounding_box_output.bmp")
