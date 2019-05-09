@@ -55,12 +55,7 @@ def create_and_save_bbox_image(store):
     file_pixels = []
 
     for i in range(len(store.bbox_mask)):
-        # Set the colors
-        red = store.bbox_mask[i].red
-        green = store.bbox_mask[i].green
-        blue = store.bbox_mask[i].blue
-
-        file_pixels.append((red, green, blue))
+        file_pixels.append(tuple(store.bbox_mask[i].rgb_colors))
 
     save_img = PIL.Image.new("RGB", (store.img_width, store.img_height))
     save_img.putdata(file_pixels)

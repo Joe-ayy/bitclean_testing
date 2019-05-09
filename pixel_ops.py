@@ -26,6 +26,9 @@ class Pixel:
         self.green = g_value
         self.blue = b_value
 
+        # The RGB values of the pixel, in a list
+        self.rgb_colors = [self.red, self.green, self.blue]
+
         # The RGB-A tuple of colors
         self.all_colors = (self.red, self.green, self.blue, alpha)
 
@@ -59,6 +62,28 @@ def create_pixels(original_pixel_list, width):
 
         # Create and add the Pixel
         new_pixels.append(Pixel(i, row, column, red_value, green_value, blue_value))
+
+    return new_pixels
+
+
+def create_pixels_in_matrix(original_pixel_list, width, height):
+    # Generate the list of ready pixels
+    ready_pixels = create_pixels(original_pixel_list, width)
+
+    # Create a new list of pixels to return
+    new_pixels = []
+
+    # Create a temp list to hold each row
+    temp_row = []
+
+    # Go through each row and column and add pixels
+    for i in range(height):
+        temp_row.clear()
+        for j in range(width):
+            pixel_to_add = ready_pixels[i * width + j]
+            temp_row.append(pixel_to_add)
+
+        new_pixels.append(temp_row)
 
     return new_pixels
 

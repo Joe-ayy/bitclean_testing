@@ -91,9 +91,10 @@ class StoreObject:
 
 
 class StoreMap:
-    def __init__(self, pixels, img_w, img_h):
+    def __init__(self, pixels, img_w, img_h, pixel_matrix=[]):
         # Initialize values
         self.all_pixels = pixels
+        self.all_pixel_matrix = pixel_matrix
         self.bbox_mask = pixels.copy()
         self.img_width = img_w
         self.img_height = img_h
@@ -196,7 +197,6 @@ class StoreMap:
                 if not self.all_pixels[abs_id].touched:
                     self.adj_pixels.append(abs_id)
                     discovered = True
-
         #endregion
 
         # region ### LEFT/RIGHT PIXELS: Only check the left and right pixels if they exist ###
@@ -299,4 +299,34 @@ class StoreMap:
         # The constraints for the bounding boxes are the rows and columns of the top most, bottom most, left most, and
         # right most pixels
 
-        return
+        # Set the black color
+        black = [0, 0, 0]
+
+        # Draw the box for each object
+        # Iterate through all the objects in the store
+        for i in range(len(self.objects_in_store)):
+            # Get the top pixel row
+            top_pixel_row = self.objects_in_store[i].top_pixel.pixel_row_id
+            # Get the bottom pixel row
+            bot_pixel_row = self.objects_in_store[i].bot_pixel.pixel_row_id
+            # Get the left pixel column
+            left_pixel_col = self.objects_in_store[i].left_pixel.pixel_col_id
+            # Get the right pixel column
+            right_pixel_col = self.objects_in_store[i].right_pixel.pixel_col_id
+
+            # Get the global id of the top left pixel
+            tl_pixel_gid = p_ops.get_pixel_gid_by_row_col(top_pixel_row, left_pixel_col, self.img_width)
+            # Get the global id of the bottom left pixel
+            bl_pixel_gid = p_ops.get_pixel_gid_by_row_col(bot_pixel_row, left_pixel_col, self.img_width)
+            # Get the global id of the top right pixel
+            tr_pixel_gid = p_ops.get_pixel_gid_by_row_col(top_pixel_row, right_pixel_col, self.img_width)
+
+            # Draw the top and bottom of the box
+            for j in range(self.objects_in_store[i].abs_width):
+                self.bbox_mask[tl_pixel_gid + j].rgb_colors = black
+                self.bbox_mask[bl_pixel_gid + j].rgb_colors = black
+
+            # Draw the left and right of the box
+            for k in range(self.objects_in_store[i].abs_height):
+                self.bbox_mask[tl_pixel_gid + k * self.img_width].rgb_colors = black
+                self.bbox_mask[tr_pixel_gid + k * self.img_width].rgb_colors = black

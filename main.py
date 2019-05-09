@@ -15,6 +15,7 @@ import datetime
 def main():
     # Start timer
     start = time.time()
+    print("Program started")
 
     # Get an image object from a file
     img = f_ops.load_and_create_image()
@@ -27,12 +28,13 @@ def main():
 
     # Create a list of pixels defined by the Pixel Class
     pixels = p_ops.create_pixels(orig_pixels, img_width)
+    #pixels_matrix = p_ops.create_pixels_in_matrix(orig_pixels, img_width, img_height)
 
     # Printing
     print("New pixel values calculated")
 
     # Create an instance of StoreMap to find all the objects in the store
-    store_map = s_ops.StoreMap(pixels, img_width, img_height)
+    store_map = s_ops.StoreMap(pixels.copy(), img_width, img_height)
 
     # Printing
     print("Store map created")

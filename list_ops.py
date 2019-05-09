@@ -23,3 +23,19 @@ def insort_pixels(list_of_pixels, pxl):
             low = mid_pt + 1
 
     list_of_pixels.insert(low, pxl)
+
+# Bubble sort algorithm mimicked from this site:
+# https://www.w3resource.com/python-exercises/data-structures-and-algorithms/python-search-and-sorting-exercise-4.php
+
+
+def sort_by_column(list_of_pixels):
+    # Bubble sort
+    for dummy in range(len(list_of_pixels) - 1, 0, -1):
+        for i in range(dummy):
+            if list_of_pixels[i].pixel_col_id > list_of_pixels[i + 1].pixel_col_id:
+                temp = list_of_pixels[i]
+                list_of_pixels[i] = list_of_pixels[i + 1]
+                list_of_pixels[i + 1] = temp
+
+    # Return
+    return list_of_pixels
