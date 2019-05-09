@@ -1,4 +1,9 @@
-def get_avg_hue(store_object, return_format="single"):
+# region ### Imports ###
+import pixel_ops as p_ops
+#endregion
+
+
+def get_avg_hue_object(store_object, return_format="single"):
     # Get the average RGB values
     avg_red = 0
     avg_green = 0
@@ -30,6 +35,24 @@ def get_avg_hue(store_object, return_format="single"):
         return avg_hue
     else:
         return -1
+
+
+def get_avg_hue_of_row_or_col(list_of_pixels):
+    # Get the average RGB values
+    hue = 0
+
+    # Get the number of pixels in the row or column
+    num_pixels = len(list_of_pixels)
+
+    # Add up the values of the colors
+    for i in range(num_pixels):
+        hue = hue + p_ops.color_to_int(list_of_pixels[i])
+
+    # Get the average of the hue
+    avg_hue = hue / num_pixels
+
+    # Return the value
+    return avg_hue
 
 
 def get_size(store_object):  # Needs to utilize a filler to find the actual size of the object

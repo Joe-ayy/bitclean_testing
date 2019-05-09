@@ -1,11 +1,15 @@
 #region ### Imports ###
-import PIL.Image
+from copy import deepcopy
 #endregion
 
 #region ### Globals ###
 # The color white
 white = 255
 all_white = (255, 255, 255, 255)
+
+# The color black
+black = 0
+all_black = (0, 0, 0, 255)
 
 # Set the alpha
 alpha = 255
@@ -26,11 +30,11 @@ class Pixel:
         self.green = g_value
         self.blue = b_value
 
-        # The RGB values of the pixel, in a list
-        self.rgb_colors = [self.red, self.green, self.blue]
-
         # The RGB-A tuple of colors
         self.all_colors = (self.red, self.green, self.blue, alpha)
+
+        # Set masks
+        self.bbox_mask = [deepcopy(self.red), deepcopy(self.green), deepcopy(self.blue)]
 
         # The touched value, determines if the pixel has been check before
         # Default it is set to false
@@ -39,8 +43,30 @@ class Pixel:
         # The hue of the pixel compared to all other pixels in an object, if its in an object
         self.hue = None
 
+        # Set the RGB color to a corresponding int
+        self.num_color = self.color_to_int()
+
     def update_hue(self, hue):
         self.hue = hue
+
+    def color_to_int(self):
+        # Code is converted from c# code written by Austin Herman located in imageops.cs in BitClean
+        # Convert the pixel color from RGB to an int
+        # Scales as (0, 0, 255) = 1 -> (255, 0, 0) = 1021
+
+        # Check to see if the color is white
+        if self.all_colors == all_white:
+            num_color = 0
+        elif self.all_colors == all_black:
+            num_color = 0
+        elif self.red == 255:
+            num_color = self.red + (255 - self.green) + 510 + 1
+        elif self.green == 255:
+            num_color = self.red + self.green + 255 + 1
+        else:
+            num_color = self.green + 255 - self.blue + 1
+
+        return num_color
 
 
 def get_orig_pixels(image):
@@ -48,44 +74,29 @@ def get_orig_pixels(image):
     return list(image.getdata())
 
 
-def create_pixels(original_pixel_list, width):
-    # Create a new list of pixels to return
-    new_pixels = []
+def create_pixel_matrix(orig_pixel_list, width, height):
+    # Create a 2-D list (Matrix) containing all the pixels in the image
+    pixel_matrix = [[None for _ in range(width)] for _ in range(height)]
 
-    for i in range(len(original_pixel_list)):
-        red_value = original_pixel_list[i][0]    # Red RGB value from 0-255
-        green_value = original_pixel_list[i][1]  # Green RGB value from 0-255
-        blue_value = original_pixel_list[i][2]   # Blue RGB value from 0-255
-
-        # Get the row and column of the pixel
-        row, column = get_row_and_col(i, width)
-
-        # Create and add the Pixel
-        new_pixels.append(Pixel(i, row, column, red_value, green_value, blue_value))
-
-    return new_pixels
-
-
-def create_pixels_in_matrix(original_pixel_list, width, height):
-    # Generate the list of ready pixels
-    ready_pixels = create_pixels(original_pixel_list, width)
-
-    # Create a new list of pixels to return
-    new_pixels = []
-
-    # Create a temp list to hold each row
-    temp_row = []
-
-    # Go through each row and column and add pixels
+    # Get the relevant pixel data and insert it to the matrix
     for i in range(height):
-        temp_row.clear()
         for j in range(width):
-            pixel_to_add = ready_pixels[i * width + j]
-            temp_row.append(pixel_to_add)
+            # Set the position index of the pixel
+            pos_idx = i * width + j
 
-        new_pixels.append(temp_row)
+            # Get the RGB values from the original pixel list
+            red_value = orig_pixel_list[pos_idx][0]
+            green_value = orig_pixel_list[pos_idx][1]
+            blue_value = orig_pixel_list[pos_idx][2]
 
-    return new_pixels
+            # Get the row and the column of the pixel
+            row = i
+            column = j
+
+            pixel_matrix[i][j] = Pixel(pos_idx, row, column, red_value, green_value, blue_value)
+
+    # Return the created pixel matrix
+    return pixel_matrix
 
 
 def get_image_width_height(image):
@@ -102,8 +113,7 @@ def get_row_and_col(pixel_index, width):
     return row, col
 
 
-def get_pixel_gid_by_row_col(row, col, width):
-    # Get the global id of the pixel from the row and column
+def get_gid_from_row_col(row, col, width):
     return (row * width) + col
 
 
