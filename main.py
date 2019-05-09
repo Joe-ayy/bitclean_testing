@@ -5,7 +5,6 @@
 import file_ops as f_ops
 import pixel_ops as p_ops
 import selection_ops as s_ops
-import object_stats as o_stats
 import time
 import datetime
 #endregion

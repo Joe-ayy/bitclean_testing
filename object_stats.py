@@ -1,5 +1,5 @@
 # region ### Imports ###
-import pixel_ops as p_ops
+
 #endregion
 
 
@@ -46,7 +46,7 @@ def get_avg_hue_of_row_or_col(list_of_pixels):
 
     # Add up the values of the colors
     for i in range(num_pixels):
-        hue = hue + p_ops.color_to_int(list_of_pixels[i])
+        hue = hue + list_of_pixels[i].color_to_int()
 
     # Get the average of the hue
     avg_hue = hue / num_pixels

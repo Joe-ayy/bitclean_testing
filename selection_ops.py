@@ -38,14 +38,16 @@ class StoreObject:
         self.pixel_cols_in_obj = []
         self.generate_pixel_columns_in_obj()
 
-        # Create pixel densities for each row and column
+        # Create and set pixel densities for each row and column
         self.pixel_density_row = []
         self.pixel_density_col = []
+        self.set_pixel_densities()
 
-        # Create weighted pixel densities for each row and column (Pixel density per row/col * average hue value for
-        # each row and column
+        # Create and set weighted pixel densities for each row and column (Pixel density per row/col * average hue
+        # value for each row and column
         self.weighted_pixel_density_row = []
         self.weighted_pixel_density_col = []
+        self.set_weighted_pixel_densities()
 
     # region ### Functions to set values ###
     # region ### Functions to initialize values ###
